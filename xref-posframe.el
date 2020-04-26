@@ -93,6 +93,30 @@
 ;;           (push (cons candidate xref) helm-xref-alist)))))
 ;;   (setq helm-xref-alist (reverse helm-xref-alist)))
 
+
+
+(defun xref-posframe--insert-line (loc ref)
+  (let ((start (point)))
+    (apply #'insert strings)
+    (add-text-properties start (point) props))
+  )
+
+(defun xref-posframe--insert (xref-alist)
+  "fff XREF-ALIST"
+  (cl-loop for ((group . xrefs) . more1) on xref-alist
+	   do
+	   (cl-loop for (xref . more2) on xrefs do
+                     (with-slots (summary location) xref
+                       (let* ((line (xref-location-line location))
+                              (prefix
+                               (if line
+                                   ;; (propertize (format line-format line)
+                                   ;;             'face 'xref-line-number)
+                                   "  ")))
+			 (insert
+			  group " " (int-to-string line) " -" summary "\n")))))
+  "noper")
+
 (defun xref-posframe--preview (fetcher alist)
   "Show xref ITEM in a posframe. ALIST is ignored"
   (cl-assert (functionp fetcher))
@@ -106,9 +130,7 @@
     (with-current-buffer buffer
       (xref-posframe-mode 1)
       (erase-buffer)
-      (xref--insert-xrefs xref-alist)
-      ;(xref--show-common-initialize xref-alist fetcher alist)
-      ;(pop-to-buffer (current-buffer))
+      (xref-posframe--insert xref-alist)
       (current-buffer))
       
   ;;(helm-xref-candidates-27 fetcher alist)
@@ -150,7 +172,7 @@ behavior to display the candidates in a separate window."
          (id (xref-backend-identifier-at-point backend))
          (defs (xref-backend-definitions backend id)))
     (cond
-n     ((not defs)
+     ((not defs)
       (user-error "No definitions found for: %s" id))
      ((cdr defs)
       (xref--show-defs defs nil))
